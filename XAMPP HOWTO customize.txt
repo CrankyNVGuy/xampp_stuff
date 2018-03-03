@@ -1,0 +1,232 @@
+Title: Customizing XAMPP
+Applies to: XAMPP for Windows 7.1.9 (xampp-win32-7.2.2-0-VC15-installer)
+Author: CrankyNVGuy
+Date: 2018-03-03
+Copyright: None whatsoever. I am paying it forward, please do the same.
+Disclaimer: Use this information at your own risk. No warranty of any kind.
+
+This document will cover how to do other things that I've found useful as I
+work on various projects. I prefer to do most things like this from the
+command prompt, but you can certainly do it without ever opening one. I will
+provide the commands that I use to do this myself, assuming only what is in
+WinDoze so you don't have to go looking for a bunch of 3rd party tools.
+
+SUBJECTS COVERED:
+ - Virtual Hosts
+ - phpMyAdmin
+ - Adminer
+ - Laravel
+ - Tools I Use
+
+I'm writing this as I install a fresh XAMPP on a freshly loaded Windows 10 Pro
+computer. I've done this on a lot of versions of Windows, so I don't think
+that part matters much. I have used XAMPP on many computers, freshly loaded
+and otherwise. It's a pretty simple install and almost always works out of the
+box, so I'm not going to dwell much on that. Questions on that subject are in
+various FAQs located at https://www.apachefriends.org/faq_windows.html - start
+there. I always install XAMPP with all the defaults so my instructions below
+assume you have done the same. If you've already installed it and tinkered
+with things before you read this document, I'd recommend you uninstall, delete
+all XAMPP folders if any were left behind, then reinstall with the defaults.
+Make sure you back up anything you value in the XAMPP folder before you trash
+it, of course.
+
+USEFUL INFO:
+Each of these steps probably requires you to stop Apache because many files
+are either locked while in use or need to be reloaded by Apache in order for
+our changes to take effect. Again, starting and stopping Apache is in the
+FAQs. If something doesn't work right, restart Apache before you do anything
+else. If it still doesn't start, look at the error.log file to see if you can
+get a hint. Also, even though the tray widget is really handy for starting and
+stopping things, the batch files in the XAMPP folder are nice for
+troubleshooting as they display messages when things choke, and they will.
+
+
+=============================VIRTUAL HOSTS======================================
+I switch between several different projects I'm working on and just want them
+to work more like the Internet web hosts they may end up on. I like to type
+something like example.local or foo.dev into my browser and have that
+particular project come up. It is nice to use a vhost for that purpose. It's
+also the way it works on regular Apache servers in the real world. Out of
+habit, I tend to use .local as my TLD for the domain name in XAMPP
+environments, but I see many developers favor the use of .dev and I think that
+is probably a better choice. Just make sure you use something that won't cause
+a conflict with something else. XAMPP isn't really intended for corporate web
+development environments so making it "just work" on a PC or laptop in your
+home or small office environment is easier this way. Here's a good web site on
+the subject: https://serversforhackers.com/c/hosts-file-and-dns
+
+It was a lot of text to explain what to do, so I decided that a batch file to
+do the work for you would be easier. I found a good one on github.com that
+ukazap put together, then forked it and made it work better with XAMPP. The
+batch file vhosts.bat can be found at
+https://gist.github.com/CrankyNVGuy/ca8554bfc16b605e9c9623a4e518dac0#file-vhosts-bat
+
+I recommend you put this in a folder that is in the PATH so that you can
+call it from anywhere. I have a folder named c:\utils that I put stuff like this
+in and have made that folder part of the PATH so I don't have to think about it.
+Google how to set your PATH environment variable if you don't already know how.
+
+Because it's important that you understand what is being done instead of only
+having the batch file doing it for you, I urge you to use the batch file to
+add a few domains, then open the files that were changed and see what was
+done. A good working example is probably better than me typing 20 paragraphs
+to explain it. Two files are tweaked for each and every web site that you want
+to set up. The files you should look at before and after you run the batch
+file are:
+
+C:\Windows\System32\drivers\etc\hosts
+C:\xampp\apache\conf\extra\httpd-vhosts.conf
+
+The hosts file contains the necessary information to direct your browser to
+the web project folder on your computer instead of looking for it on the
+Internet. A more detailed explaination of how address resolution works is
+beyond what I'm going to cover here, but Google will enlighten you on the
+subject of DNS, host files, and address resolution. Short version for XAMPP -
+look at the hosts file for a very quick and clear answer of what you need to do.
+
+The batch file creates a public folder, which is where your project will be
+saved to. This is the root of your project, i.e., where the index.php or
+index.html and other stuff will go. The private folder is where I usually put
+project notes and such, but you could use it for anything. The logs folder
+is where the Apache server will put error.log and access.log for this domain
+instead of mixing it with all other domains in the shared log file, making
+troubleshooting problems much easier. If you don't want to fuss with the log
+and private folders, just delete those lines in the vhost block and don't
+bother creating the folders. It will work fine with nothing more than the
+public folder.
+
+Here's what the directory structure should look like, with each virtual host
+within htdocs\vhosts having an identical layout:
+
+C:\
+|_xampp
+  |_htdocs
+    |_vhosts
+      |_example.local
+      | |_logs
+      | |   error.log
+      | |   access.log
+      | |_private
+      | |_public
+      | |   index.html
+      |
+      |_example2.local
+        |_logs
+        |   error.log
+        |   access.log
+        |_private
+        |_public
+        |   index.php
+
+===============================phpMyAdmin=======================================
+I love phpMyAdmin and use it a lot when I'm working with MySQL. It's included in
+XAMPP, but I like consistency, so I want it to work like everything else I use.
+For that reason, I choose to tweak it a bit and make it work as a vhost. With
+a little bit of effort, it will open in a browser as phpmyadmin.local and still
+work from the link built into the default page for XAMPP. Have your cake and eat
+it, too!
+
+To set it up, just use the vhost utility and create a new vhost with any
+name you'd like. I name mine installation phpmyadmin.local, but it doesn't
+matter.
+
+vhost add phpmyadmin.local
+cd c:\xampp\htdocs\phpmyadmin.local
+rmdir public
+mklink /D public C:\xampp\phpmyadmin
+
+What these commands do:
+Create the vhost, move to the new vhost directory, remove the public folder we
+just created, then create a symlink (similar to a shortcut, but way better) to
+the phpmyadmin folder installed by XAMPP. The symlink basically becomes the new
+public directory and points to the XAMPP folder.
+
+Open your browser, go to phpmyadmin.local, done!
+
+NOTE: Symlinks are really handy and I'm glad Microsoft finally started making
+them available in Windows. The symlink (mklink) is only going to work in more
+recent versions of Windows, so you may or may not be able to make this work
+with a normal shortcut. It's not worth a lot of trouble, so I didn't test it
+in older versions of Windows.
+
+=================================ADMINER========================================
+As good as phpMyAdmin is, it can be serious overkill and a bit too busy for the
+quick little tasks that are often performed when developing a project. For the
+quick and dirty chores, I use Adminer, which is a great project consisting of
+only one php file. You can download it from https://www.adminer.org/.
+
+To set Adminer up, just use the add-vhost utility and create a new vhost with
+any name you'd like. I name mine installation adminer.local, but it doesn't
+matter.
+
+vhost add adminer.local
+cd c:\xampp\htdocs\adminer.local\public
+del index.php
+ren adminer-4.6.2-mysql.php index.php
+
+What these commands do:
+After the vhost is created, delete the index.php file from the public folder you
+just created. Then, copy the downloaded adminer file to the public directory.
+Adminer will usually have a name like adminer-4.6.2-mysql.php. Rename that file
+to index.php.
+
+Restart Apache, open your browser, go to adminer.local, done!
+
+=================================Laravel=======================================
+I'm just learning Laravel myself and have tried the Homestead installation a
+couple of times. I actually got it working once, but what a PITA! If you are
+reading this, you probably don't yet need that kind of environment yet. For me,
+I am just  trying to decide if Laravel is right for me, so this is fine for that
+purpose.
+
+Other than a few minor embelishments, most of these details came from here:
+https://www.codementor.io/magarrent/how-to-install-laravel-5-xampp-windows-du107u9ji
+
+Download and install Composer if you don't already have it. I installed with
+all defaults. It is very important that you install this as administrator or
+it won't work.
+
+Get it here:  https://getcomposer.org/download/
+
+After installation is complete, test that it worked by typing composer on the
+command line. Make sure of these things if you have problems:
+1. Do not assume that no errors on installation means no problems.
+2. You MUST install this as administrator or it won't work.
+3. It probably still won't work from the command line, so close the command
+   window and then re-open it as administrator or logout and back in. This is
+   what the last window on the installation tells you, BTW.
+4. Until you get composer to run from the command line, do not go any further as
+   nothing else is going to work without this working first.
+
+To set Laravel up, use the add-vhost utility and create a new vhost with any
+name you'd like. I name mine installation laravel.dev because that's what the
+instructions in Codementor uses, but it doesn't matter.
+
+NOTE: We have to remove the directories that vhost created because composer is
+not going to be happy about folders already being there. After we are done, we
+just add the logs and private folders back.
+
+vhost add laravel.dev
+cd c:\xampp\htdocs\vhosts\laravel.dev
+rd logs
+rd private
+rd public
+cd c:\xampp\htdocs\vhosts
+composer create-project laravel/laravel laravel.dev "5.1.*"
+cd c:\xampp\htdocs\vhosts\laravel.dev
+md logs
+md private
+
+Restart Apache, open your browser, go to laravel.dev, done!
+
+=================================Tools I Use ===================================
+In addition to the above, these are great free tools that I use a lot when I
+work on projects.
+
+Bitvise - https://www.bitvise.com/
+Flyspeed SQL Query - https://www.activedbsoft.com/overview-querytool.html
+HeidiSQL - https://www.heidisql.com/
+PsPad - https://www.pspad.com/en/download.php
+Sublime Text - https://www.sublimetext.com/
+
